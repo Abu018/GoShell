@@ -23,9 +23,24 @@ func Execute(input string) ([]string, error) {
 		}
 	}
 
+	input = strings.TrimSpace(input)
+	if len(input) > 0 && (input[0] == '|' || input[len(input)-1] == '|') {
+		return nil, fmt.Errorf("syntax error: empty command in pipeline")
+	}
 	for i := 0; i < len(input); i++ {
 		ch := input[i]
+		if input[i] == '|' {
 
+		}
+
+		if !inSingle && !inDouble && ch == '|' {
+			if i+1 < len(input) && input[i+1] == '|' {
+				return nil, fmt.Errorf("syntax error: empty command in pipeline")
+			}
+			flush()
+			result = append(result, "|")
+			continue
+		}
 		if inSingle {
 			if ch == '\'' {
 				inSingle = false
@@ -97,14 +112,15 @@ func main() {
 		}
 		result, err := Execute(sc.Text())
 		if err != nil {
-			fmt.Print("ERR unterminated quote")
+			fmt.Printf("ERR %s", err)
+
 			continue
 		}
 		for i, word := range result {
 			if i > 0 {
 				fmt.Print(" ")
 			}
-			fmt.Printf("[%s]", word)
+			fmt.Printf("%s", word)
 		}
 	}
 	if err := sc.Err(); err != nil {
