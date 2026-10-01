@@ -50,6 +50,7 @@ func Execute(input string) (Result, error) {
 		for _, w := range words {
 			if strings.HasPrefix(w, "<<") {
 				delim = strings.TrimPrefix(strings.TrimPrefix(w, "<<"), "-")
+				delim = strings.Trim(delim, "'\"")
 				cmd = strings.Join(words, " ")
 				inHeredoc = true
 				opened = true
@@ -67,19 +68,33 @@ func Execute(input string) (Result, error) {
 	return result, nil
 }
 
+func printResult(res Result) {
+	for _, item := range res.Output {
+		fmt.Printf("CMD %s\n", item.Cmd)
+		fmt.Println("BODY:")
+		for _, line := range item.Body {
+			fmt.Println(line)
+		}
+		fmt.Println("END")
+	}
+}
+
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
+	var input strings.Builder
 	for scanner.Scan() {
-		input := scanner.Text()
-		res, err := Execute(input)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "ERR %s\n", err)
-			os.Exit(1)
-		}
-		fmt.Print(res)
+		input.WriteString(scanner.Text())
+		input.WriteByte('\n')
 	}
 	if err := scanner.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+	res, err := Execute(input.String())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "ERR %s\n", err)
+		os.Exit(1)
+	}
+	printResult(res)
 }
