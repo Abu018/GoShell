@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -21,7 +23,6 @@ func Execute(input string) (Result, error) {
 	inHeredoc := false
 	delim := ""
 
-	// 1. split into lines, not bytes
 	for _, line := range strings.Split(input, "\n") {
 		// 2. split each line into words
 		words := strings.Fields(line)
@@ -45,7 +46,6 @@ func Execute(input string) (Result, error) {
 			continue
 		}
 
-		// 5. not inside: look for a << word on this line
 		opened := false
 		for _, w := range words {
 			if strings.HasPrefix(w, "<<") {
@@ -68,22 +68,18 @@ func Execute(input string) (Result, error) {
 }
 
 func main() {
-	input := `echo hi
-	cat <<EOF
-    hello
-    world
-    EOF
-    cat <<-DONE
-    	line1
-    	line2
-    	DONE`
-
-	res, err := Execute(input)
-	if err != nil {
-		fmt.Println("error:", err)
-		return
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		input := scanner.Text()
+		res, err := Execute(input)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "ERR %s\n", err)
+			os.Exit(1)
+		}
+		_ = res
 	}
-	for _, o := range res.Output {
-		fmt.Printf("%+v\n", o)
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 }
