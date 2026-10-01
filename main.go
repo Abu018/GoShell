@@ -76,7 +76,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "ERR %s\n", err)
 			os.Exit(1)
 		}
-		_ = res
+		fmt.Print(res)
 	}
 	if err := scanner.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
